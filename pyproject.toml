@@ -1,0 +1,22 @@
+[build-system]
+requires = ["setuptools>=61.0"]
+build-backend = "setuptools.backends.legacy:build"
+
+[project]
+name = "rigol-dsa815"
+version = "0.2.0"
+description = "Python driver and GUI for the Rigol DSA815 spectrum analyzer"
+readme = "README.md"
+license = {file = "LICENSE"}
+requires-python = ">=3.8"
+dependencies = [
+    "numpy",
+    "pyvisa",
+]
+
+[project.optional-dependencies]
+gui-qt = ["PyQt5", "pyqtgraph"]
+gui-tk = ["matplotlib"]
+
+[project.urls]
+Repository = "https://github.com/JovanMarkov96/rigol-dsa815-python"

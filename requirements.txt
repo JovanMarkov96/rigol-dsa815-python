@@ -1,4 +1,7 @@
 numpy
 pyvisa
+# GUI (PyQt5 viewer)
+PyQt5
+pyqtgraph
+# GUI (Tkinter viewer)
 matplotlib
-pandas

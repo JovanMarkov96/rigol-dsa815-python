@@ -1,95 +1,146 @@
-# Rigol DSA815 Python
+# rigol-dsa815-control
 
-This project provides a Python interface for interacting with the Rigol DSA815 spectrum analyzer. It includes functionality for initializing the device, performing measurements, and processing the resulting data.
+Python driver and GUI for the **Rigol DSA815** spectrum analyzer (0 Hz – 1.5 GHz / 3.2 GHz).
 
-## Overview
+Control the instrument over USB or LAN via PyVISA. Includes a live spectrum viewer (PyQt5 and Tkinter variants) with optional peak-lock detection.
 
-The Rigol DSA815 is a versatile spectrum analyzer that can be controlled programmatically using this Python library. This project aims to simplify the process of automating measurements and data collection from the device.
+> **Trademark notice:** Rigol and DSA815 are trademarks of RIGOL Technologies Co., Ltd. This project is not affiliated with or endorsed by RIGOL.
 
-## Features
+---
 
-- Initialize the Rigol DSA815 device
-- Perform various types of measurements
-- Process and analyze measurement data
-- Save and load measurement configurations
-- Generate reports from measurement data
+## Requirements
 
-## Installation
-
-To get started with the Rigol DSA815 Python library, follow these steps:
-
-1. Clone the repository:
-   ```
-   git clone https://github.com/yourusername/rigol-dsa815-python.git
-   ```
-
-2. Navigate to the project directory:
-   ```
-   cd rigol-dsa815-python
-   ```
-
-3. Install the required dependencies:
-   ```
-   pip install -r requirements.txt
-   ```
-
-## Usage
-
-To use the library, you can run the main application:
+- Python 3.8+
+- [NI-VISA](https://www.ni.com/en/support/downloads/drivers/download.ni-visa.html) or [pyvisa-py](https://pyvisa.readthedocs.io/projects/pyvisa-py/) backend
+- See `requirements.txt` for Python packages
 
 ```
-python src/main.py
+pip install -r requirements.txt
 ```
 
-### Example
+---
 
-Here is a simple example of how to use the library to initialize the device and perform a measurement using the `DSA815.py` file:
+## Quick start
 
 ```python
 from Rigol_DSA815 import DSA815
 
-def main():
-   # Connect to our spectrum analyzer
-   print("Connecting...")
-   test = DSA815()
-   test.conn()  # Establish connection with the spectrum analyzer
-
-   print("Configuring...")
-   test.set_input_atten(30)  # Set input attenuation to 30 dB
-   test.set_center_frequency(80e6)  # Set center frequency to 80 MHz
-   test.set_span(130e3)  # Set frequency span to 130 kHz
-   test.set_RBW(100)  # Set resolution bandwidth to 100 Hz
-   test.set_VBW(100)  # Set video bandwidth to 100 Hz
-   test.set_sweep_count(1)  # Set the number of sweeps to 1
-   test.set_sweep_time(5)  # Set the sweep time to 5 seconds
-
-   print("Initiating measurement...")
-   test.initiate_measurement()  # Start the measurement process
-
-   # Save the trace on the spectrum analyzer
-   trace_file_save_path = 'D:\\Trace1.trc'
-   test.save_trace('TRACE1', trace_file_save_path)  # Save the trace as 'TRACE1' to the specified path
-
-   # Load the trace from the spectrum analyzer and save it to a CSV file on the computer
-   csv_file_path = r'C:\\path\\to\\your\\directory\\trace1.csv'
-   test.load_trace(trace_file_save_path, csv_file_path)  # Load the trace and save it as a CSV file
-
-if __name__ == "__main__":
-   main()
+sa = DSA815()
+sa.conn()                          # auto-detect over USB/LAN
+sa.set_center_frequency(100e6)    # 100 MHz center
+sa.set_span(10e6)                  # 10 MHz span
+sa.set_RBW(10e3)                   # 10 kHz RBW
+freqs, amps = sa.get_sweep_data()  # returns (np.ndarray, np.ndarray)
+sa.dis()
 ```
 
-To run the example, execute the following command:
+---
 
+## Launch GUI
+
+### PyQt5 (recommended)
+
+```bash
+python Rigol_GUI.py
 ```
-python src/DSA815.py
+
+Or embed with optional peak-lock detection:
+
+```python
+from Rigol_GUI import SpectrumViewer
+from PyQt5 import QtWidgets
+import sys
+
+app = QtWidgets.QApplication(sys.argv)
+# lock_freq_Hz=None disables lock indicator (default)
+viewer = SpectrumViewer(lock_freq_Hz=100e6, lock_bw_Hz=5e3, lock_threshold_dBm=-40)
+viewer.show()
+sys.exit(app.exec_())
 ```
 
-For more detailed usage, refer to the documentation in the `docs` directory.
+### Tkinter
 
-## Contributing
+```bash
+python Rigol_TK_viewer.py
+```
 
-Contributions are welcome! If you have suggestions for improvements or new features, please open an issue or submit a pull request.
+---
+
+## API overview
+
+### Connection
+
+| Method | Description |
+|--------|-------------|
+| `conn()` | Auto-detect and connect (USB or LAN) |
+| `dis()` | Disconnect and release VISA resource |
+| `identify()` | Return IDN string |
+
+### Frequency
+
+| Method | Description |
+|--------|-------------|
+| `set_center_frequency(freq)` | Set center frequency (Hz) |
+| `set_span(span)` | Set span (Hz) |
+| `set_freq_limits(f_low, f_hi)` | Set start/stop frequency (Hz) |
+| `get_center_frequency()` | Read center frequency (Hz) |
+| `get_span()` | Read span (Hz) |
+
+### Bandwidth
+
+| Method | Description |
+|--------|-------------|
+| `set_RBW(rbw)` | Set resolution bandwidth (Hz) |
+| `set_VBW(vbw)` | Set video bandwidth (Hz) |
+| `get_RBW()` / `get_VBW()` | Read current bandwidth settings |
+
+### Sweep
+
+| Method | Description |
+|--------|-------------|
+| `set_sweep_time(t)` | Set sweep time (s) |
+| `set_sweep_count(n)` | Set number of sweeps per acquisition |
+| `initiate_measurement()` | Trigger single sweep, block until done |
+
+### Trace and data
+
+| Method | Description |
+|--------|-------------|
+| `measure_trace()` | Single sweep, returns list of amplitudes (dBm) |
+| `get_sweep_data()` | Current sweep, returns (frequencies, amplitudes) as numpy arrays |
+| `set_trace_mode(n, mode)` | Set trace 1-3 display mode |
+| `set_format(fmt)` | Set transfer format: 'ASCii' or 'REAL,32' |
+
+### Input / RF
+
+| Method | Description |
+|--------|-------------|
+| `set_input_atten(dB)` | Set input attenuation 0-30 dB |
+| `enable_RF(state)` | Enable/disable RF preamplifier |
+| `TG_enable(state)` | Enable/disable tracking generator |
+| `set_TG_amp(dBm)` | Set TG output power -40 to 0 dBm |
+
+### Storage (MMEMory)
+
+| Method | Description |
+|--------|-------------|
+| `save_trace(label, path)` | Save trace to instrument storage |
+| `load_trace(path, csv_path)` | Load trace from instrument, save as CSV |
+| `save_screenshot(path)` | Capture screen to instrument storage |
+| `save_setup(path)` / `load_setup(path)` | Save/load instrument configuration |
+| `get_disk_info()` | Return dict of instrument disk information |
+
+---
+
+## Examples
+
+See the [`examples/`](examples/) directory:
+
+- `examples/basic_connection.py` — connect, configure, read a trace
+- `examples/launch_gui.py` — launch the PyQt5 viewer with custom lock detection
+
+---
 
 ## License
 
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+MIT License. See [LICENSE](LICENSE).
