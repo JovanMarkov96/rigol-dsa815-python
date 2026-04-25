@@ -27,3 +27,15 @@ env/
 # OS
 .DS_Store
 Thumbs.db
+
+# Vendor manuals and software — copyrighted, do not commit
+*.pdf
+*.chm
+*.zip
+*.exe
+*.msi
+*.cab
+*.rar
+*.7z
+*.doc
+*.docx

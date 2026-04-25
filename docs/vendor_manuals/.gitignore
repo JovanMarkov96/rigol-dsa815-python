@@ -1,4 +1,5 @@
-*.pdf
-*.txt
-*.doc
-*.docx
+# Ignore everything in this directory — vendor manuals and software are copyrighted.
+# Only README.md and this .gitignore are tracked.
+*
+!.gitignore
+!README.md
