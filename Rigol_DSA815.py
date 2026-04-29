@@ -6,15 +6,18 @@ import time
 class DSA815(object):
     def __init__(self):
         self.inst = None
+        self.rm = None
 
     def conn(self):
         """Auto-detect and connect to the first Rigol DSA815 found on any VISA interface."""
-        rm = pyvisa.ResourceManager()
-        devices = rm.list_resources()
+        self.rm = pyvisa.ResourceManager()
+        devices = self.rm.list_resources()
         print("[Rigol] Detected VISA devices:", devices)
         for dev in devices:
+            if dev.startswith("ASRL"):
+                continue  # DSA815 connects via USB or LAN, never serial
             try:
-                inst = rm.open_resource(dev)
+                inst = self.rm.open_resource(dev)
                 idn = inst.query("*IDN?")
                 if "DSA815" in idn or "Rigol" in idn:
                     self.inst = inst
@@ -31,6 +34,8 @@ class DSA815(object):
         if self.inst:
             self.inst.close()
             self.inst = None
+        # Keep self.rm alive — closing a ResourceManager on NI-VISA can invalidate
+        # sessions opened through other RMs in the same process.
 
     def identify(self):
         """
